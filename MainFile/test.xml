@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-01-05 20:25:22 by Eclipse SUMO GUI Version 1.13.0
+<!-- generated on 2025-01-06 15:52:36 by Eclipse SUMO GUI Version 1.13.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
@@ -23,7 +23,7 @@
     </processing>
 
     <traci_server>
-        <remote-port value="6612"/>
+        <remote-port value="17409"/>
     </traci_server>
 
     <gui_only>
@@ -111,4 +111,9 @@
     <tripinfo id="hv.42" depart="140.00" departLane="Input_0" departPos="5.10" departSpeed="17.05" departDelay="0.01" arrival="299.00" arrivalLane="Output_0" arrivalPos="200.00" arrivalSpeed="11.31" duration="159.00" routeLength="2203.47" waitingTime="4.00" waitingCount="1" stopTime="0.00" timeLoss="23.47" rerouteNo="1" devices="tripinfo_hv.42 routing_hv.42" vType="HV" speedFactor="1.02" vaporized=""/>
     <tripinfo id="hv.48" depart="160.00" departLane="Input_2" departPos="5.10" departSpeed="17.25" departDelay="0.02" arrival="299.00" arrivalLane="Output_1" arrivalPos="200.00" arrivalSpeed="11.33" duration="139.00" routeLength="2203.47" waitingTime="0.00" waitingCount="0" stopTime="0.00" timeLoss="4.62" rerouteNo="1" devices="tripinfo_hv.48 routing_hv.48" vType="HV" speedFactor="1.03" vaporized=""/>
     <tripinfo id="cav.14" depart="141.00" departLane="Input_1" departPos="5.10" departSpeed="15.67" departDelay="1.00" arrival="302.00" arrivalLane="Output_1" arrivalPos="200.00" arrivalSpeed="10.35" duration="161.00" routeLength="2203.47" waitingTime="2.00" waitingCount="2" stopTime="0.00" timeLoss="13.59" rerouteNo="1" devices="tripinfo_cav.14 routing_cav.14" vType="CAV" speedFactor="0.94" vaporized=""/>
-</tripinfos>
+    <tripinfo id="hv.45" depart="150.00" departLane="Input_0" departPos="5.10" departSpeed="16.42" departDelay="0.02" arrival="305.00" arrivalLane="Output_1" arrivalPos="200.00" arrivalSpeed="10.84" duration="155.00" routeLength="2203.47" waitingTime="0.00" waitingCount="0" stopTime="0.00" timeLoss="13.91" rerouteNo="1" devices="tripinfo_hv.45 routing_hv.45" vType="HV" speedFactor="0.98" vaporized=""/>
+    <tripinfo id="cav.15" depart="151.00" departLane="Input_1" departPos="5.10" departSpeed="16.37" departDelay="1.00" arrival="307.00" arrivalLane="Output_1" arrivalPos="200.00" arrivalSpeed="10.38" duration="156.00" routeLength="2203.47" waitingTime="0.00" waitingCount="0" stopTime="0.00" timeLoss="14.35" rerouteNo="1" devices="tripinfo_cav.15 routing_cav.15" vType="CAV" speedFactor="0.98" vaporized=""/>
+    <tripinfo id="hv.46" depart="154.00" departLane="Input_1" departPos="5.10" departSpeed="16.79" departDelay="0.68" arrival="307.00" arrivalLane="Output_0" arrivalPos="200.00" arrivalSpeed="11.19" duration="153.00" routeLength="2203.47" waitingTime="0.00" waitingCount="0" stopTime="0.00" timeLoss="14.98" rerouteNo="1" devices="tripinfo_hv.46 routing_hv.46" vType="HV" speedFactor="1.01" vaporized=""/>
+    <tripinfo id="hv.47" depart="157.00" departLane="Input_1" departPos="5.10" departSpeed="18.12" departDelay="0.35" arrival="309.00" arrivalLane="Output_1" arrivalPos="200.00" arrivalSpeed="11.47" duration="152.00" routeLength="2203.47" waitingTime="0.00" waitingCount="0" stopTime="0.00" timeLoss="24.03" rerouteNo="1" devices="tripinfo_hv.47 routing_hv.47" vType="HV" speedFactor="1.09" vaporized=""/>
+    <tripinfo id="hv.44" depart="147.00" departLane="Input_0" departPos="5.10" departSpeed="15.92" departDelay="0.35" arrival="312.00" arrivalLane="Output_0" arrivalPos="200.00" arrivalSpeed="10.61" duration="165.00" routeLength="2203.47" waitingTime="2.00" waitingCount="1" stopTime="0.00" timeLoss="19.55" rerouteNo="1" devices="tripinfo_hv.44 routing_hv.44" vType="HV" speedFactor="0.96" vaporized=""/>
+    <tripinfo id="hv.49" depart="164.00" departLane="Input_2" departPos="5.10" departSpeed="16.12" departDelay="0.68" arrival="312.00" arrivalLane="Output_1" arrivalPos="200.00" arrivalSpeed="10.68" duration="148.00" routeLength="2203.47" waitingTime="0.00" waitingCount="0" stopTime="0.00" timeLoss="4.19" rerouteNo="1" devices="tripinfo_hv.49 routing_hv.49" vType="HV" speedFactor="0.97" vaporized=""/>

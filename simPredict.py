@@ -169,17 +169,20 @@ def simExecute(allVehs,suggestLC,suggestSG,simID,queue):
                 addSimVehs(allVehs)
             # 到时间执行换道引导
             elif step == 1:
-                suggestCvLC = simCavLCExecute(suggestLC)
+                if suggestLC:
+                    suggestCvLC = simCavLCExecute(suggestLC)
             if step == avgLCReactTime + 1:
-                simCvLCExecute(suggestCvLC)
+                if suggestLC:
+                    simCvLCExecute(suggestCvLC)
             # 到时间执行速度引导
             # todo: 灵敏度分析参数，要与Vehicle.setSGInfo中的SGRemainTime相同
-            # todo: 20250105
             if step == avgSGReactTime + 1:
-                simSGExecute(suggestSG)
+                if suggestSG:
+                    simSGExecute(suggestSG)
             # 到时间判断若换道引导成功执行，禁用自身换道模型
             if step == avgLCReactTime + 10:
-                banLCModel(suggestLC)
+                if suggestLC:
+                    banLCModel(suggestLC)
             # 为部分车辆实施静态晚合流
             staticLateMerge()
 

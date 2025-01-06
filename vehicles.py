@@ -150,7 +150,7 @@ class Vehicles:
     '''
     # todo:不确定性参数分布待确定
     def initSGs(self, suggestSG, avgReactTime, reactTimeBias):
-        print("suggestLC:", suggestSG)
+        print("suggestSG:", suggestSG)
 
         for vehID, targetSpeed in suggestSG.items():
             veh = self.vehs[vehID]

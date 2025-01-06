@@ -62,27 +62,25 @@ class Optimizer:
                 newSG = []
                 refSG = [2.778,1.389,1.389,-1.389,-1.389,-1.389,-1.389,-2.778,-2.778,-2.778]
 
-                for vehId in self.readySG:
-                    if LCTag:
+                # 考虑车辆可能同时换道的可能性
+                if LCTag:
+                    for vehId in self.readySG:
                         if vehId in self.readyLC:
                             index = self.readyLC.index(vehId)
                             # 被要求换道
-                            if newLC[index] != -1:
+                            if individual["LC"][index] != -1:
                                 newSG.append(0)
-                            # 没有被要求换道，取随机值
-                            else:
-                                if np.random.randint(0, 2):
-                                    newSG.append(np.random.choice(refSG))
-                                else:
-                                    newSG.append(0)
-                        # 不在可换道列表中，取随机值
+                                continue
+                        if np.random.randint(0,2):
+                            newSG.append(np.random.choice(refSG))
                         else:
-                            if np.random.randint(0,2):
-                                newSG.append(np.random.choice(refSG))
-                            else:
-                                newSG.append(0)
-                    else:
-
+                            newSG.append(0)
+                else:
+                    for _ in self.readySG:
+                        if np.random.randint(0, 2):
+                            newSG.append(np.random.choice(refSG))
+                        else:
+                            newSG.append(0)
 
                 individual["SG"] = newSG
 
@@ -102,22 +100,32 @@ class Optimizer:
     将便于变换的列表形式转换为真正需要换道的字典形式
     readyLC: ["cv_0","cav_3","cv_1","cv_2","cav_2"]
     pop["LC"]: [-1,1,-1,-1,2]
-    readySG: ["cv_0","cav_3","cv_1","cv_2","cav_2"]
-    pop["SG"]: [0,1.389,-1.389,0,0]
     
     suggestLC: {"cv.1": "Input.3_0", "cv.3": "Input.2_1"}
-    suggestSG: {"cv.1": 30, "cv.3": 20}
     '''
-    def transReadyToSuggest(self,individual:Dict,readyLCRef:Dict,readySGRef:Dict):
-        suggestLC, suggestSG = {},{}
+    def transReadyToSuggestLC(self,individual:Dict,readyLCRef:Dict):
+        suggestLC = {}
         popLC = individual['LC']
-        popSG = individual['SG']
 
         # 将需要变道的车辆加入suggest集合中
         for i in range(len(popLC)):
             if popLC[i] != -1:
                 veh = self.readyLC[i]
                 suggestLC[veh] = readyLCRef[veh][:-2]+'_'+str(popLC[i])
+
+        return suggestLC
+
+    '''
+    将便于变换的列表形式转换为真正需要换道的字典形式
+    readySG: ["cv_0","cav_3","cv_1","cv_2","cav_2"]
+    pop["SG"]: [0,1.389,-1.389,0,0]
+
+    suggestSG: {"cv.1": 30, "cv.3": 20}
+    '''
+    def transReadyToSuggestSG(self,individual:Dict,readySGRef:Dict):
+        suggestSG = {}
+        popSG = individual['SG']
+
         # 将进行变速引导的车辆加入suggest集合中
         for i in range(len(popSG)):
             if popSG[i] != 0:
@@ -127,17 +135,23 @@ class Optimizer:
                     targetSpeed = (nearestFive(targetSpeed*3.6))/3.6
                 suggestSG[vehID] = targetSpeed
 
-        return suggestLC,suggestSG
+        return suggestSG
+
 
     '''快速计算一个种群的适应度'''
-    def quickFitness(self,pop:List[Dict],count,readyLCRef,readySGRef) -> List[Dict]:
+    def quickFitness(self,pop:List[Dict],count,LCTag,SGTag) -> List[Dict]:
         suggestLCs,suggestSGs = [],[]
 
-        for i in range(count):
-            # 要进行一个readyLC和suggestLC的转换
-            suggestLC,suggestSG = self.transReadyToSuggest(pop[i],readyLCRef,readySGRef)
-            suggestLCs.append(suggestLC)
-            suggestSGs.append(suggestSG)
+        if LCTag:
+            for i in range(count):
+                # 要进行readyLC和suggestLC的转换
+                suggestLC = self.transReadyToSuggestLC(pop[i],self.readyLCRef)
+                suggestLCs.append(suggestLC)
+        if SGTag:
+            for i in range(count):
+                # 要进行readySG和suggestSG的转换
+                suggestSG = self.transReadyToSuggestSG(pop[i], self.readySGRef)
+                suggestSGs.append(suggestSG)
 
         # 有需要预测的适应度时
         results = processExecute(count,self.orgVehsInfo,suggestLCs,suggestSGs)
@@ -171,36 +185,39 @@ class Optimizer:
 
 
     '''实现交叉操作'''
-    def crossover(self,offSpring1,offSpring2):
+    def crossover(self,offSpring1,offSpring2,LCTag,SGTag):
         crossOff1, crossOff2 = {},{}
 
-        # 交换换道区间
-        pos1 = random.randrange(0, len(self.readyLC))
-        pos2 = random.randrange(0, len(self.readyLC))
-        if pos2 < pos1:
-            pos1,pos2 = pos2,pos1
+        if LCTag:
+            # 交换换道区间
+            pos1 = random.randrange(0, len(self.readyLC))
+            pos2 = random.randrange(0, len(self.readyLC))
+            if pos2 < pos1:
+                pos1,pos2 = pos2,pos1
 
-        crossOff1['LC'] = offSpring1['LC'][:pos1]+offSpring2['LC'][pos1:pos2]+offSpring1['LC'][pos2:]
-        crossOff2['LC'] = offSpring2['LC'][:pos1]+offSpring1['LC'][pos1:pos2]+offSpring2['LC'][pos2:]
+            crossOff1['LC'] = offSpring1['LC'][:pos1]+offSpring2['LC'][pos1:pos2]+offSpring1['LC'][pos2:]
+            crossOff2['LC'] = offSpring2['LC'][:pos1]+offSpring1['LC'][pos1:pos2]+offSpring2['LC'][pos2:]
 
-        # 交换变速区间
-        pos1 = random.randrange(0, len(self.readySG))
-        pos2 = random.randrange(0, len(self.readySG))
-        if pos2 < pos1:
-            pos1,pos2 = pos2,pos1
-        crossOff1['SG'] = offSpring1['SG'][:pos1] + offSpring2['SG'][pos1:pos2] + offSpring1['SG'][pos2:]
-        crossOff2['SG'] = offSpring2['SG'][:pos1] + offSpring1['SG'][pos1:pos2] + offSpring2['SG'][pos2:]
+        if SGTag:
+            # 交换变速区间
+            pos1 = random.randrange(0, len(self.readySG))
+            pos2 = random.randrange(0, len(self.readySG))
+            if pos2 < pos1:
+                pos1,pos2 = pos2,pos1
+            crossOff1['SG'] = offSpring1['SG'][:pos1] + offSpring2['SG'][pos1:pos2] + offSpring1['SG'][pos2:]
+            crossOff2['SG'] = offSpring2['SG'][:pos1] + offSpring1['SG'][pos1:pos2] + offSpring2['SG'][pos2:]
 
-        # 交换之后，如果该车辆被建议换道了，SG要赋值为0
-        for i in range(len(self.readySG)):
-            vehId = self.readySG[i]
-            if vehId in self.readyLC:
-                index = self.readyLC.index(vehId)
-                # 被要求换道
-                if crossOff1['LC'][index] != -1:
-                    crossOff1['SG'][i] = 0
-                if crossOff2['LC'][index] != -1:
-                    crossOff2['SG'][i] = 0
+            if LCTag:
+                # 交换之后，如果该车辆被建议换道了，SG要赋值为0
+                for i in range(len(self.readySG)):
+                    vehId = self.readySG[i]
+                    if vehId in self.readyLC:
+                        index = self.readyLC.index(vehId)
+                        # 被要求换道
+                        if crossOff1['LC'][index] != -1:
+                            crossOff1['SG'][i] = 0
+                        if crossOff2['LC'][index] != -1:
+                            crossOff2['SG'][i] = 0
 
         crossOff1['fit'] = -1
         crossOff2['fit'] = -1
@@ -209,47 +226,50 @@ class Optimizer:
 
 
     '''实现变异操作'''
-    def mutation(self,crossOff):
-        # 选取变道变异点，依据可选择车道变异
-        pos = random.randrange(0, len(self.readyLC))
-        if self.LCBound[0] <= pos < self.LCBound[1]:
-            choice = [-1,0,2]
-            choice.remove(crossOff['LC'][pos])
-            crossOff['LC'][pos] = random.choice(choice)
-        else:
-            crossOff['LC'][pos] = -crossOff['LC'][pos]
-
-        # 若变异后被建议换道，检查变速建议，置为0
-        if crossOff['LC'][pos] != -1:
-            if self.readyLC[pos] in self.readySG:
-                index = self.readySG.index(self.readyLC[pos])
-                crossOff['SG'][index] = 0
-
-        # 选取合适的变速变异点
-        while True:
-            pos = random.randrange(0, len(self.readySG))
-            # 当选到的车辆在可变道集合中且被建议变道，重新选取
-            if self.readySG[pos] in self.readyLC and crossOff['LC'][self.readyLC.index(self.readySG[pos])] != -1:
-                pass
-            # 否则结束循环，此值有效
+    def mutation(self,crossOff,LCTag,SGTag):
+        if LCTag:
+            # 选取变道变异点，依据可选择车道变异
+            pos = random.randrange(0, len(self.readyLC))
+            if self.LCBound[0] <= pos < self.LCBound[1]:
+                choice = [-1,0,2]
+                choice.remove(crossOff['LC'][pos])
+                crossOff['LC'][pos] = random.choice(choice)
             else:
+                crossOff['LC'][pos] = -crossOff['LC'][pos]
+
+            if SGTag:
+                # 若变异后被建议换道，检查变速建议，置为0
+                if crossOff['LC'][pos] != -1:
+                    if self.readyLC[pos] in self.readySG:
+                        index = self.readySG.index(self.readyLC[pos])
+                        crossOff['SG'][index] = 0
+
+        if SGTag:
+            # 选取合适的变速变异点
+            while True:
+                pos = random.randrange(0, len(self.readySG))
+                if LCTag:
+                    # 当选到的车辆在可变道集合中且被建议变道，重新选取
+                    if self.readySG[pos] in self.readyLC and crossOff['LC'][self.readyLC.index(self.readySG[pos])] != -1:
+                        continue
+                # 否则结束循环，此值有效
                 break
 
-        # 选取合适的变速变异值
-        choice = [2.778, 1.389, 1.389, -1.389, -1.389, -1.389, -1.389, -2.778, -2.778, -2.778]
-        # 若先前的车速建议不为0
-        if crossOff['SG'][pos]:
-            while True:
-                value = random.choice([0, 1])
-                if value:
-                    value = random.choice(choice)
-                if value != crossOff['SG'][pos]:
-                    crossOff['SG'][pos] = value
-                    break
-        # 若先前车速建议为0
-        else:
-            value = random.choice(choice)
-            crossOff['SG'][pos] = value
+            # 选取合适的变速变异值
+            choice = [2.778, 1.389, 1.389, -1.389, -1.389, -1.389, -1.389, -2.778, -2.778, -2.778]
+            # 若先前的车速建议不为0
+            if crossOff['SG'][pos]:
+                while True:
+                    value = random.choice([0, 1])
+                    if value:
+                        value = random.choice(choice)
+                    if value != crossOff['SG'][pos]:
+                        crossOff['SG'][pos] = value
+                        break
+            # 若先前车速建议为0
+            else:
+                value = random.choice(choice)
+                crossOff['SG'][pos] = value
 
         crossOff['fit'] = -1
 
@@ -268,15 +288,28 @@ class Optimizer:
 
 
     '''关联分析，判断驾驶引导建议涉及的车辆数'''
-    def correlationChoose(self,individuals:list):
+    def correlationChoose(self,individuals:list,LCTag,SGTag):
         res = []
 
         # 指标系数取值进一步确定
-        for i in range(3):
-            index = len(list(filter(lambda x: x != -1, individuals[i]['LC']))) \
-                    + 0.5*len(list(filter(lambda x: x != 0, individuals[i]['SG']))) \
-                    + 0.1*sum(abs(x) for x in individuals[i]['SG'])
-            res.append(index)
+        # 没有换道
+        if not LCTag:
+            for i in range(3):
+                index = 0.5*len(list(filter(lambda x: x != 0, individuals[i]['SG']))) \
+                        + 0.1*sum(abs(x) for x in individuals[i]['SG'])
+                res.append(index)
+        # 没有变速
+        elif not SGTag:
+            for i in range(3):
+                index = len(list(filter(lambda x: x != -1, individuals[i]['LC'])))
+                res.append(index)
+        # 有换道与变速
+        else:
+            for i in range(3):
+                index = len(list(filter(lambda x: x != -1, individuals[i]['LC']))) \
+                        + 0.5*len(list(filter(lambda x: x != 0, individuals[i]['SG']))) \
+                        + 0.1*sum(abs(x) for x in individuals[i]['SG'])
+                res.append(index)
 
         minValue = min(res)
         minIndex = [index for index, value in enumerate(res) if value == minValue]
@@ -296,20 +329,21 @@ class Optimizer:
         if LCTag:
             self.readyLC = LCInfo["readyLC"]
             self.LCBound = LCInfo["LCBound"]
-            readyLCRef = LCInfo["readyLCRef"]
+            self.readyLCRef = LCInfo["readyLCRef"]
         if SGTag:
             self.readySG = SGInfo["readySG"]
-            readySGRef = LCInfo["readySGRef"]
+            self.readySGRef = SGInfo["readySGRef"]
 
         bestTimes = 1
         allFits,bestIndividuals = [],[]
+        bestLC,bestSG = {},{}
 
         # 种群初始化
         # initPop: [{'LC': [-1,1,-1,-1,2,-1,1], 'SG': [0,1.389,-1.389,0,0], 'fit': -1},
         #           {'LC': [-1,1,-1,-1,2,-1,1], 'SG': [0,1.389,-1.389,0,0], 'fit': -1}]
         initPop = self.initPopulation(LCTag,SGTag)
         # 为初始化的种群计算fitness
-        popWithFit = self.quickFitness(initPop,self.popNum,readyLCRef,readySGRef)
+        popWithFit = self.quickFitness(initPop,self.popNum,LCTag,SGTag)
         # 找到当前最优个体
         self.bestIndividual = self.selectBest(popWithFit)
         bestFit = self.bestIndividual['fit']
@@ -326,15 +360,15 @@ class Optimizer:
                 # 交叉
                 if random.random() < self.crossParam:
                     if len(self.readyLC) or len(self.readySG) > 1:
-                        crossOff1, crossOff2 = self.crossover(offSpring1,offSpring2)
+                        crossOff1, crossOff2 = self.crossover(offSpring1,offSpring2,LCTag,SGTag)
                         # 变异
                         if random.random() < self.mutationParam:
-                            mutationOff1 = self.mutation(crossOff1)
-                            mutationOff2 = self.mutation(crossOff2)
-                            popWithFit = self.quickFitness([mutationOff1,mutationOff2],2,readyLCRef,readySGRef)
+                            mutationOff1 = self.mutation(crossOff1,LCTag,SGTag)
+                            mutationOff2 = self.mutation(crossOff2,LCTag,SGTag)
+                            popWithFit = self.quickFitness([mutationOff1,mutationOff2],2,LCTag,SGTag)
                             nextOff.extend(popWithFit)
                         else:
-                            popWithFit = self.quickFitness([crossOff1, crossOff2],2,readyLCRef,readySGRef)
+                            popWithFit = self.quickFitness([crossOff1, crossOff2],2,LCTag,SGTag)
                             nextOff.extend(popWithFit)
                     else:
                         nextOff.extend([offSpring1, offSpring2])
@@ -361,13 +395,16 @@ class Optimizer:
                 break
             # todo: 加一个阈值，然后关联分析
             if len(bestIndividuals) >= 3 and (bestIndividuals[-1]['fit']-bestIndividuals[-3]['fit']) < 0.5:
-                self.bestIndividual = self.correlationChoose(bestIndividuals[-3:])
+                self.bestIndividual = self.correlationChoose(bestIndividuals[-3:],LCTag,SGTag)
                 break
 
         print(allFits)
         # self.iterPlot(allFits)
 
-        bestLC,bestSG = self.transReadyToSuggest(self.bestIndividual,readyLCRef,readySGRef)
+        if LCTag:
+            bestLC = self.transReadyToSuggestLC(self.bestIndividual,self.readyLCRef)
+        if SGTag:
+            bestSG = self.transReadyToSuggestSG(self.bestIndividual, self.readySGRef)
         # self.bestLC = {'cv.0':1,'cv.5':1,'cav.2':1}
         # self.bestSG = {'cav.3':15,'cav.5':13}
 

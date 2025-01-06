@@ -18,7 +18,9 @@ def multiProcess(processNum,vehs,suggestLCs,suggestSGs):
 
     # 使用多进程执行仿真
     for i in range(processNum):
-        p = multiprocessing.Process(target=simExecute, args=(vehs, suggestLCs[i],suggestSGs[i],i,queue))
+        suggestLC = suggestLCs[i] if suggestLCs else []
+        suggestSG = suggestSGs[i] if suggestSGs else []
+        p = multiprocessing.Process(target=simExecute, args=(vehs, suggestLC,suggestSG,i,queue))
         processes.append(p)
         p.start()
         # print(time.time())
