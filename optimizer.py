@@ -29,7 +29,8 @@ from typing import List,Dict
 
 
 class Optimizer:
-    def __init__(self,popNum,iterTimes,sameBestTimes,crossParam,mutationParam):
+    def __init__(self,originPopNum,popNum,iterTimes,sameBestTimes,crossParam,mutationParam):
+        self.originPopNum = originPopNum
         self.popNum = popNum
         self.iterTimes = iterTimes
         self.sameBestTimes = sameBestTimes
@@ -43,7 +44,7 @@ class Optimizer:
     def initPopulation(self,LCTag,SGTag):
         initPop = []
 
-        for _ in range(self.popNum):
+        for _ in range(self.originPopNum):
             individual = {}
             if LCTag:
                 # lane0: -1,1   lane1: 0,-1,2   lane2: 1,-1
@@ -85,7 +86,6 @@ class Optimizer:
                 individual["SG"] = newSG
 
             individual["fit"] = -1
-
             initPop.append(individual)
 
         return initPop
@@ -95,6 +95,7 @@ class Optimizer:
     def selectBest(self,popWithFit:List[Dict]) -> Dict:
         sortPop = sorted(popWithFit,key=itemgetter("fit"),reverse=True)     # 降序
         return sortPop[0]       # 返回最大值
+
 
     '''
     将便于变换的列表形式转换为真正需要换道的字典形式
@@ -166,15 +167,20 @@ class Optimizer:
     '''用轮盘赌方式按照概率从上一代选择个体直至形成新的一代'''
     def selection(self,popWithFit:List[Dict]) -> List[Dict]:
         afterSelect = []
-        sumFit = sum(x['fit'] for x in popWithFit)
         sortPop = sorted(popWithFit,key=itemgetter("fit"), reverse=True)        # 从大到小排列
+
+        minFit = sortPop[-1]['fit']
+        sumFit = 0
+        for individual in sortPop:
+            individual['fitRef'] = individual['fit'] - minFit   # 归一化
+            sumFit += individual['fitRef']
 
         for i in range(self.popNum):
             pointer = sumFit * np.random.uniform(0, 1)  # 随机产生一个[0,sum_fit]范围的数，即轮盘赌这局的指针
             curSum = 0
             for individual in sortPop:
                 # 逐次累加从大到小排列的个体的适应度函数的值，直至超过指针，即选择它
-                curSum += individual['fit']
+                curSum += individual['fitRef']
                 if curSum >= pointer:
                     afterSelect.append(sortPop[i])
                     break
@@ -343,7 +349,9 @@ class Optimizer:
         #           {'LC': [-1,1,-1,-1,2,-1,1], 'SG': [0,1.389,-1.389,0,0], 'fit': -1}]
         initPop = self.initPopulation(LCTag,SGTag)
         # 为初始化的种群计算fitness
-        popWithFit = self.quickFitness(initPop,self.popNum,LCTag,SGTag)
+        popWithFit = self.quickFitness(initPop,self.originPopNum,LCTag,SGTag)
+        popWithFit = sorted(popWithFit, key=itemgetter('fit'), reverse=True)[:self.popNum]      # 截取初始种群中前部分
+
         # 找到当前最优个体
         self.bestIndividual = self.selectBest(popWithFit)
         bestFit = self.bestIndividual['fit']

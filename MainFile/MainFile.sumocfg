@@ -4,7 +4,8 @@
 
     <input>
         <net-file value="MainFile.net.xml"/>
-        <route-files value="MainFile.rou.xml"/>  
+        <route-files value="MainFile.rou.xml"/>
+        <additional-files value="emission_addition.xml"/>
     </input>
 
     <time>
@@ -14,7 +15,7 @@
     </time>
 
     <output>
-        <tripinfo-output value="test.xml"/>
+        <tripinfo-output value="../output/test.xml"/>
     </output>
     
     <processing>

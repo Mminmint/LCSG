@@ -73,6 +73,7 @@ def run():
     speedLimits = [16.67,16.67,16.67,16.67]
 
     # 遗传算法参数
+    originPopNum = 20
     popNum = 8
     iterTimes = 10
     sameBestTimes = 3
@@ -80,7 +81,7 @@ def run():
     mutationParam = 0.1
 
     vehicles_ = Vehicles()
-    optimizer_ = Optimizer(popNum,iterTimes,sameBestTimes,crossParam,mutationParam)
+    optimizer_ = Optimizer(originPopNum,popNum,iterTimes,sameBestTimes,crossParam,mutationParam)
     start = time.time()
 
     while traci.simulation.getMinExpectedNumber() > 0:
