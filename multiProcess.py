@@ -12,7 +12,7 @@ import multiprocessing
 
 
 # 多进程
-def multiProcess(processNum,vehs,suggestLCs,suggestSGs):
+def multiProcess(processNum,vehs,suggestLCs,suggestSGs,speedLimits):
     processes = []
     queue = multiprocessing.Queue()  # 创建一个队列用于收集结果
 
@@ -20,7 +20,7 @@ def multiProcess(processNum,vehs,suggestLCs,suggestSGs):
     for i in range(processNum):
         suggestLC = suggestLCs[i] if suggestLCs else []
         suggestSG = suggestSGs[i] if suggestSGs else []
-        p = multiprocessing.Process(target=simExecute, args=(vehs, suggestLC,suggestSG,i,queue))
+        p = multiprocessing.Process(target=simExecute, args=(vehs, suggestLC,suggestSG,i,queue,speedLimits))
         processes.append(p)
         p.start()
         # print(time.time())
@@ -34,6 +34,6 @@ def multiProcess(processNum,vehs,suggestLCs,suggestSGs):
     return results
 
 
-def processExecute(processNum,orgVehsInfo,suggestLCs,suggestSGs):
-    results = multiProcess(processNum,orgVehsInfo,suggestLCs,suggestSGs)
+def processExecute(processNum,orgVehsInfo,suggestLCs,suggestSGs,speedLimits):
+    results = multiProcess(processNum,orgVehsInfo,suggestLCs,suggestSGs,speedLimits)
     return results

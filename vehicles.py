@@ -134,7 +134,6 @@ class Vehicles:
     '''
     def executeLCs(self):
         nowLC = self.prepareLC[0]
-        print("nowLC:", nowLC)
 
         for vehID,targetLane in nowLC.items():
             traci.vehicle.changeLane(vehID, int(targetLane[-1]), 3)
@@ -150,8 +149,6 @@ class Vehicles:
     '''
     # todo:不确定性参数分布待确定
     def initSGs(self, suggestSG, avgReactTime, reactTimeBias):
-        print("suggestSG:", suggestSG)
-
         for vehID, targetSpeed in suggestSG.items():
             veh = self.vehs[vehID]
             veh.setSGInfo(self.step)
@@ -175,7 +172,6 @@ class Vehicles:
     # todo:不确定性参数分布待确定
     def executeSGs(self, executeBias):
         nowSG = self.prepareSG[0]
-        print("nowSG:",nowSG)
 
         for vehID, targetSpeed in nowSG.items():
             targetSpeed = min(targetSpeed,16.67)

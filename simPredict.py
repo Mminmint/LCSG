@@ -19,7 +19,7 @@ from typing import Dict
 '''
 向路网中添加车辆，构造初始状态
 '''
-def addSimVehs(allVehs):
+def addSimVehs(allVehs,speedLimits):
     traci.route.add("expressway", ["Input", "Output"])
     traci.route.add("expressway1", ["Input.1", "Output"])
     traci.route.add("expressway2", ["Input.2", "Output"])
@@ -27,10 +27,12 @@ def addSimVehs(allVehs):
 
     typeRef = {0: "HV", 1: "CV", 2: "CAV"}
     routeRef = {"1":"expressway1","2":"expressway2","3":"expressway3","t":"expressway"}
+    speedRef = {"1":1,"2":2,"3":3,"t":0}
 
     for vehInfo in allVehs:
         routeID = routeRef[vehInfo[2][-3]]
-        traci.vehicle.add(vehID=vehInfo[0], routeID=routeID, typeID=typeRef[vehInfo[1]], depart='now',departLane=int(vehInfo[2][-1]), departPos=vehInfo[-1],departSpeed=vehInfo[4])
+        departSpeed = min(vehInfo[4],speedLimits[speedRef[vehInfo[2][-3]]])
+        traci.vehicle.add(vehID=vehInfo[0], routeID=routeID, typeID=typeRef[vehInfo[1]], depart='now',departLane=int(vehInfo[2][-1]), departPos=vehInfo[-1],departSpeed=departSpeed)
         if vehInfo[5] is not None:
             traci.vehicle.setLaneChangeMode(vehInfo[0], vehInfo[5])
 
@@ -89,7 +91,6 @@ suggestSG: {"cv.1":30,"cv.3":20...}
 '''
 def simSGExecute(suggestSG:Dict) -> None:
     for vehID,targetSpeed in suggestSG.items():
-        targetSpeed = min(targetSpeed,16.67)
         traci.vehicle.slowDown(vehID,targetSpeed,5)
 
 
@@ -142,9 +143,10 @@ def avgSpeed(allVehs,horizon,detectOut) -> float:
 suggestCvLC:{'cv.1':'Input.1_2','cv.16':'Input.2_2'}
 suggestCavLC:{'cav.1':'Input.1_2','cav.16':'Input.2_2'}
 '''
-def simExecute(allVehs,suggestLC,suggestSG,simID,queue):
+def simExecute(allVehs,suggestLC,suggestSG,simID,queue,speedLimits):
     result = 0
     detectOut = {}
+    edgeList = ['Input', 'Input.1', 'Input.2', 'Input.3']
 
     try:
         sumoCmd = startSUMO(False, "SubFile/SubTry.sumocfg")
@@ -166,11 +168,15 @@ def simExecute(allVehs,suggestLC,suggestSG,simID,queue):
                     detectOut[vehId] = step
 
             if step == 0:
-                addSimVehs(allVehs)
+                addSimVehs(allVehs,speedLimits)
             # 到时间执行换道引导
             elif step == 1:
+                for i in range(4):
+                    traci.edge.setMaxSpeed(edgeList[i], speedLimits[i])
+
                 if suggestLC:
                     suggestCvLC = simCavLCExecute(suggestLC)
+
             if step == avgLCReactTime + 1:
                 if suggestLC:
                     simCvLCExecute(suggestCvLC)
@@ -194,6 +200,8 @@ def simExecute(allVehs,suggestLC,suggestSG,simID,queue):
             time.sleep(0.03)  # 在此等待以防止问题
 
     except Exception as e:
+        print(allVehs)
+        print(suggestSG)
         print(f"Error: {e}")
 
     finally:

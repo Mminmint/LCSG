@@ -73,13 +73,27 @@ class Optimizer:
                                 newSG.append(0)
                                 continue
                         if np.random.randint(0,2):
-                            newSG.append(np.random.choice(refSG))
+                            # 给五次机会，如果一直比限速大，就赋值为0
+                            for i in range(5):
+                                targetSpeed = np.random.choice(refSG) + self.readySGRef[vehId]
+                                if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                                    newSG.append(targetSpeed)
+                                    break
+                            else:
+                                newSG.append(0)
                         else:
                             newSG.append(0)
                 else:
-                    for _ in self.readySG:
+                    for vehId in self.readySG:
                         if np.random.randint(0, 2):
-                            newSG.append(np.random.choice(refSG))
+                            # 给五次机会，如果一直比限速大，就赋值为0
+                            for i in range(5):
+                                targetSpeed = np.random.choice(refSG) + self.readySGRef[vehId]
+                                if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                                    newSG.append(targetSpeed)
+                                    break
+                            else:
+                                newSG.append(0)
                         else:
                             newSG.append(0)
 
@@ -123,7 +137,7 @@ class Optimizer:
 
     suggestSG: {"cv.1": 30, "cv.3": 20}
     '''
-    def transReadyToSuggestSG(self,individual:Dict,readySGRef:Dict):
+    def transReadyToSuggestSG(self,individual:Dict):
         suggestSG = {}
         popSG = individual['SG']
 
@@ -131,7 +145,7 @@ class Optimizer:
         for i in range(len(popSG)):
             if popSG[i] != 0:
                 vehID = self.readySG[i]
-                targetSpeed = min(readySGRef[vehID] + popSG[i],16.67)
+                targetSpeed = popSG[i]
                 if "cv" in vehID:
                     targetSpeed = (nearestFive(targetSpeed*3.6))/3.6
                 suggestSG[vehID] = targetSpeed
@@ -151,11 +165,11 @@ class Optimizer:
         if SGTag:
             for i in range(count):
                 # 要进行readySG和suggestSG的转换
-                suggestSG = self.transReadyToSuggestSG(pop[i], self.readySGRef)
+                suggestSG = self.transReadyToSuggestSG(pop[i])
                 suggestSGs.append(suggestSG)
 
         # 有需要预测的适应度时
-        results = processExecute(count,self.orgVehsInfo,suggestLCs,suggestSGs)
+        results = processExecute(count,self.orgVehsInfo,suggestLCs,suggestSGs,self.speedLimits)
 
         # 和pop中的序号对上，赋值fit
         for i in range(count):
@@ -265,17 +279,23 @@ class Optimizer:
             choice = [2.778, 1.389, 1.389, -1.389, -1.389, -1.389, -1.389, -2.778, -2.778, -2.778]
             # 若先前的车速建议不为0
             if crossOff['SG'][pos]:
-                while True:
+                for i in range(5):
                     value = random.choice([0, 1])
                     if value:
                         value = random.choice(choice)
-                    if value != crossOff['SG'][pos]:
-                        crossOff['SG'][pos] = value
-                        break
+                    targetSpeed = value + self.readySGRef[self.readySG[pos]]
+                    if targetSpeed != crossOff['SG'][pos]:
+                        if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                            crossOff['SG'][pos] = targetSpeed
+                            break
             # 若先前车速建议为0
             else:
                 value = random.choice(choice)
-                crossOff['SG'][pos] = value
+                for i in range(5):
+                    targetSpeed = value + self.readySGRef[self.readySG[pos]]
+                    if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                        crossOff['SG'][pos] = targetSpeed
+                        break
 
         crossOff['fit'] = -1
 
@@ -339,6 +359,8 @@ class Optimizer:
         if SGTag:
             self.readySG = SGInfo["readySG"]
             self.readySGRef = SGInfo["readySGRef"]
+            self.speedLimits = SGInfo["speedLimits"]
+            self.curMaxSpeed = max(self.speedLimits)
 
         bestTimes = 1
         allFits,bestIndividuals = [],[]
@@ -402,7 +424,7 @@ class Optimizer:
             if bestTimes >= self.sameBestTimes:
                 break
             # todo: 加一个阈值，然后关联分析
-            if len(bestIndividuals) >= 3 and (bestIndividuals[-1]['fit']-bestIndividuals[-3]['fit']) < 0.5:
+            if len(bestIndividuals) >= 3 and (bestIndividuals[-1]['fit']-bestIndividuals[-3]['fit']) < 0.001:
                 self.bestIndividual = self.correlationChoose(bestIndividuals[-3:],LCTag,SGTag)
                 break
 
@@ -412,7 +434,7 @@ class Optimizer:
         if LCTag:
             bestLC = self.transReadyToSuggestLC(self.bestIndividual,self.readyLCRef)
         if SGTag:
-            bestSG = self.transReadyToSuggestSG(self.bestIndividual, self.readySGRef)
+            bestSG = self.transReadyToSuggestSG(self.bestIndividual)
         # self.bestLC = {'cv.0':1,'cv.5':1,'cav.2':1}
         # self.bestSG = {'cav.3':15,'cav.5':13}
 

@@ -16,7 +16,6 @@ import copy
 
 import toolFunction
 from vehicles import Vehicles
-from vehicle import Vehicle
 from optimizer import Optimizer
 
 
@@ -27,7 +26,8 @@ LCBound: [2,5]
 readyLC: ["cv_0", "cav_3","cv_1", "cv_2", "cav_2"]
 '''
 def lineBound(readyLCDict):
-    LCBound = [0]
+    LCBound = list()
+    LCBound.append(0)
     readyLC = []
 
     for i in range(3):
@@ -109,7 +109,7 @@ def run():
             # 依据频率、安全约束给出可以接受变道/变速引导的车辆
             # readySG: ["cv_0","cav_3"]
             # readyLCRef: {"cv_0":"Input.3_0","cv_1":"Input.2_1"}
-            readyLCDict, readyLCCount, readyLCRef, readySG, readySGCount, readySGRef = vehicles_.readyOptByLane()
+            readyLCDict, readyLCCount, readyLCRef, readySG,readySGCount, readySGRef = vehicles_.readyOptByLane()
 
             # 有可建议换道车辆，没有可建议变速车辆
             if readyLCCount and not readySGCount:
@@ -130,7 +130,7 @@ def run():
                 # 整理车辆信息，便于多线程调用
                 orgVehsInfo = vehicles_.organizeInfo()
 
-                SGInfo = {"readySG":readySG, "readySGRef":readySGRef}
+                SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":speedLimits}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, SGInfo=SGInfo)
 
@@ -141,7 +141,7 @@ def run():
                 orgVehsInfo = vehicles_.organizeInfo()
 
                 LCInfo = {"readyLC":readyLC,"readyLCRef":readyLCRef,"LCBound":LCBound}
-                SGInfo = {"readySG":readySG, "readySGRef":readySGRef}
+                SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":speedLimits}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, LCInfo=LCInfo, SGInfo=SGInfo)
 
