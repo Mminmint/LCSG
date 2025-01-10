@@ -176,12 +176,14 @@ class Vehicles:
             for vehID, targetSpeed in nowSG.items():
                 # CAV无延迟精准执行，直接set
                 if "cav" in vehID:
+                    targetSpeed = max(0,targetSpeed)
                     traci.vehicle.slowDown(vehID,targetSpeed,5)
                 # CV要记录目标加速度，和剩余执行时间
                 else:
                     curSpeed = self.vehs[vehID].speed
                     randomRatio = random.uniform(executeBias, 2-executeBias)
                     realTargetSpeed = round(curSpeed + (targetSpeed - curSpeed)*randomRatio,3)
+                    realTargetSpeed = max(0,realTargetSpeed)
                     traci.vehicle.slowDown(vehID,realTargetSpeed,5)
                     # print(vehID,targetSpeed,realTargetSpeed)
 

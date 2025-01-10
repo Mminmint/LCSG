@@ -5,14 +5,11 @@
 # @Software: PyCharm
 
 import random
+import traci
 import numpy as np
 # import matplotlib.pyplot as plt
 
-
 from copy import deepcopy
-
-import traci
-
 from multiProcess import processExecute
 from toolFunction import nearestFive
 from operator import itemgetter
@@ -157,7 +154,7 @@ class Optimizer:
                 vehID = self.readySG[i]
                 targetSpeed = popSG[i]
                 if "cv" in vehID:
-                    targetSpeed = (nearestFive(targetSpeed*3.6))/3.6
+                    targetSpeed = max((nearestFive(targetSpeed*3.6))/3.6,0)
                 suggestSG[vehID] = targetSpeed
 
         return suggestSG

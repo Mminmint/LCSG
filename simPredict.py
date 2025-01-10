@@ -91,6 +91,7 @@ suggestSG: {"cv.1":30,"cv.3":20...}
 '''
 def simSGExecute(suggestSG:Dict) -> None:
     for vehID,targetSpeed in suggestSG.items():
+        targetSpeed = max(0,targetSpeed)
         traci.vehicle.slowDown(vehID,targetSpeed,5)
 
 
