@@ -10,12 +10,12 @@
 
     <time>
         <begin value="0"/>
-        <end value="1200"/>
+        <end value="1500"/>
         <step-length value="1"/>
     </time>
 
     <output>
-        <tripinfo-output value="../output/test.xml"/>
+        <tripinfo-output value="../output/veh2000.xml"/>
     </output>
     
     <processing>

@@ -18,7 +18,6 @@ class Vehicles:
         self.lastVehs = {}
         self.prepareLC = [{},{},{},{},{}]      # todo:敏感性参数
         self.prepareSG = [{},{},{},{},{}]
-        self.executeSG = []
 
 
     '''
@@ -121,7 +120,7 @@ class Vehicles:
         upLimit = avgReactTime * (2 - reactTimeBias)
         reactTime = round(random.uniform(downLimit, upLimit))
 
-        print("suggestLC:",suggestLC)
+        # print("suggestLC:",suggestLC)
 
         for vehID,lane in suggestLC.items():
             veh = self.vehs[vehID]
@@ -173,28 +172,18 @@ class Vehicles:
     def executeSGs(self, executeBias):
         nowSG = self.prepareSG[0]
 
-        for vehID, targetSpeed in nowSG.items():
-            targetSpeed = min(targetSpeed,16.67)
-            # CAV无延迟精准执行，直接set
-            if "cav" in vehID:
-                traci.vehicle.slowDown(vehID,targetSpeed,5)
-            # CV要记录目标加速度，和剩余执行时间
-            else:
-                targetAcc = (targetSpeed - traci.vehicle.getSpeed(vehID))/5
-                self.executeSG.append({"vehID":vehID,"targetAcc":targetAcc,"remainTime":5})
-
-        for vehSGInfo in self.executeSG[:]:
-            downLimit = vehSGInfo["targetAcc"] * executeBias
-            upLimit = vehSGInfo["targetAcc"] * (2 - executeBias)
-            realAcc = round(random.uniform(downLimit, upLimit))
-            realAcc = max(-4.5, min(2, realAcc))  # 保证加速度值有效
-
-            setValue = self.vehs[vehSGInfo["vehID"]].speed + realAcc
-
-            traci.vehicle.setSpeed(vehSGInfo["vehID"], setValue)
-            vehSGInfo["remainTime"] -= 1
-            if vehSGInfo["remainTime"] == 0:
-                self.executeSG.remove(vehSGInfo)
+        if nowSG:
+            for vehID, targetSpeed in nowSG.items():
+                # CAV无延迟精准执行，直接set
+                if "cav" in vehID:
+                    traci.vehicle.slowDown(vehID,targetSpeed,5)
+                # CV要记录目标加速度，和剩余执行时间
+                else:
+                    curSpeed = self.vehs[vehID].speed
+                    randomRatio = random.uniform(executeBias, 2-executeBias)
+                    realTargetSpeed = round(curSpeed + (targetSpeed - curSpeed)*randomRatio,3)
+                    traci.vehicle.slowDown(vehID,realTargetSpeed,5)
+                    # print(vehID,targetSpeed,realTargetSpeed)
 
         self.prepareSG.pop(0)
         self.prepareSG.append({})

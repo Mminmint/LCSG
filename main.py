@@ -74,7 +74,7 @@ def run():
 
     # 遗传算法参数
     originPopNum = 20
-    popNum = 8
+    popNum = 6
     iterTimes = 10
     sameBestTimes = 3
     crossParam = 0.6
@@ -88,13 +88,12 @@ def run():
         traci.simulationStep()
 
         # 进行可变信息板限速控制
-        if (step >= 240 and step < 300) or (step >= 540 and step < 600) \
-                or (step >= 840 and step < 900):
+        if (step >= 540 and step < 600) or (step >= 840 and step < 900) or (step >= 1140 and step < 1200):
             for i in range(len(edgeList)):
                 edge = edgeList[i]
                 lastVehNum = traci.edge.getLastStepVehicleNumber(edge)
                 count[i] += lastVehNum
-        elif step == 300 or step == 600 or step == 900:
+        elif step == 600 or step == 900 or step == 1200:
             for i in range(len(count)):
                 avgDensity = count[i]*2.0/60      # 平均密度veh/km
                 speedLimit = setVSL(avgDensity,edgeList[i])
@@ -102,7 +101,7 @@ def run():
             count = [0,0,0,0]
 
         # 模型优化
-        if step >= 300:
+        if step >= 600:
             curVehs = traci.vehicle.getIDList()
             # 初始化/更新vehs中的车辆信息，更新optVehs
             vehicles_.initVehs(step,curVehs)
@@ -165,7 +164,7 @@ def run():
         # 操作结束，准备进入下一个步长
         step += 1
 
-        if step == 1200:
+        if step == 1500:
             end = time.time()
             print("costTime:", end - start)
             break

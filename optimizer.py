@@ -60,7 +60,7 @@ class Optimizer:
 
             if SGTag:
                 # 生成变速随机种子
-                newSG = []
+                newSG,absSG = [],[]
                 refSG = [2.778,1.389,1.389,-1.389,-1.389,-1.389,-1.389,-2.778,-2.778,-2.778]
 
                 # 考虑车辆可能同时换道的可能性
@@ -70,34 +70,44 @@ class Optimizer:
                             index = self.readyLC.index(vehId)
                             # 被要求换道
                             if individual["LC"][index] != -1:
+                                absSG.append(0)
                                 newSG.append(0)
                                 continue
                         if np.random.randint(0,2):
                             # 给五次机会，如果一直比限速大，就赋值为0
                             for i in range(5):
-                                targetSpeed = np.random.choice(refSG) + self.readySGRef[vehId]
+                                choice = np.random.choice(refSG)
+                                targetSpeed = choice + self.readySGRef[vehId]
                                 if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                                    absSG.append(choice)
                                     newSG.append(targetSpeed)
                                     break
                             else:
+                                absSG.append(0)
                                 newSG.append(0)
                         else:
+                            absSG.append(0)
                             newSG.append(0)
                 else:
                     for vehId in self.readySG:
                         if np.random.randint(0, 2):
                             # 给五次机会，如果一直比限速大，就赋值为0
                             for i in range(5):
-                                targetSpeed = np.random.choice(refSG) + self.readySGRef[vehId]
+                                choice = np.random.choice(refSG)
+                                targetSpeed = choice + self.readySGRef[vehId]
                                 if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                                    absSG.append(choice)
                                     newSG.append(targetSpeed)
                                     break
                             else:
+                                absSG.append(0)
                                 newSG.append(0)
                         else:
+                            absSG.append(0)
                             newSG.append(0)
 
                 individual["SG"] = newSG
+                individual["absSG"] = absSG
 
             individual["fit"] = -1
             initPop.append(individual)
@@ -226,6 +236,8 @@ class Optimizer:
                 pos1,pos2 = pos2,pos1
             crossOff1['SG'] = offSpring1['SG'][:pos1] + offSpring2['SG'][pos1:pos2] + offSpring1['SG'][pos2:]
             crossOff2['SG'] = offSpring2['SG'][:pos1] + offSpring1['SG'][pos1:pos2] + offSpring2['SG'][pos2:]
+            crossOff1['absSG'] = offSpring1['absSG'][:pos1] + offSpring2['absSG'][pos1:pos2] + offSpring1['absSG'][pos2:]
+            crossOff2['absSG'] = offSpring2['absSG'][:pos1] + offSpring1['absSG'][pos1:pos2] + offSpring2['absSG'][pos2:]
 
             if LCTag:
                 # 交换之后，如果该车辆被建议换道了，SG要赋值为0
@@ -236,8 +248,10 @@ class Optimizer:
                         # 被要求换道
                         if crossOff1['LC'][index] != -1:
                             crossOff1['SG'][i] = 0
+                            crossOff1['absSG'][i] = 0
                         if crossOff2['LC'][index] != -1:
                             crossOff2['SG'][i] = 0
+                            crossOff2['absSG'][i] = 0
 
         crossOff1['fit'] = -1
         crossOff2['fit'] = -1
@@ -263,6 +277,7 @@ class Optimizer:
                     if self.readyLC[pos] in self.readySG:
                         index = self.readySG.index(self.readyLC[pos])
                         crossOff['SG'][index] = 0
+                        crossOff['absSG'][index] = 0
 
         if SGTag:
             # 选取合适的变速变异点
@@ -283,9 +298,10 @@ class Optimizer:
                     value = random.choice([0, 1])
                     if value:
                         value = random.choice(choice)
-                    targetSpeed = value + self.readySGRef[self.readySG[pos]]
-                    if targetSpeed != crossOff['SG'][pos]:
+                    if value != crossOff['absSG'][pos]:
+                        targetSpeed = value + self.readySGRef[self.readySG[pos]]
                         if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                            crossOff['absSG'][pos] = value
                             crossOff['SG'][pos] = targetSpeed
                             break
             # 若先前车速建议为0
@@ -294,6 +310,7 @@ class Optimizer:
                 for i in range(5):
                     targetSpeed = value + self.readySGRef[self.readySG[pos]]
                     if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                        crossOff['absSG'][pos] = value
                         crossOff['SG'][pos] = targetSpeed
                         break
 
@@ -321,8 +338,8 @@ class Optimizer:
         # 没有换道
         if not LCTag:
             for i in range(3):
-                index = 0.5*len(list(filter(lambda x: x != 0, individuals[i]['SG']))) \
-                        + 0.1*sum(abs(x) for x in individuals[i]['SG'])
+                index = 0.2*len(list(filter(lambda x: x != 0, individuals[i]['SG']))) \
+                        + 0.1*sum(abs(x) for x in individuals[i]['absSG'])
                 res.append(index)
         # 没有变速
         elif not SGTag:
@@ -333,8 +350,8 @@ class Optimizer:
         else:
             for i in range(3):
                 index = len(list(filter(lambda x: x != -1, individuals[i]['LC']))) \
-                        + 0.5*len(list(filter(lambda x: x != 0, individuals[i]['SG']))) \
-                        + 0.1*sum(abs(x) for x in individuals[i]['SG'])
+                        + 0.2*len(list(filter(lambda x: x != 0, individuals[i]['SG']))) \
+                        + 0.1*sum(abs(x) for x in individuals[i]['absSG'])
                 res.append(index)
 
         minValue = min(res)
