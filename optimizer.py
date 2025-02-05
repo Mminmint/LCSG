@@ -277,38 +277,41 @@ class Optimizer:
                         crossOff['absSG'][index] = 0
 
         if SGTag:
+            mutationPoint = -1
             # 选取合适的变速变异点
-            while True:
+            for i in range(5):
                 pos = random.randrange(0, len(self.readySG))
                 if LCTag:
                     # 当选到的车辆在可变道集合中且被建议变道，重新选取
                     if self.readySG[pos] in self.readyLC and crossOff['LC'][self.readyLC.index(self.readySG[pos])] != -1:
                         continue
                 # 否则结束循环，此值有效
+                mutationPoint = pos
                 break
 
-            # 选取合适的变速变异值
-            choice = [1.389, -1.389]
-            # 若先前的车速建议不为0
-            if crossOff['SG'][pos]:
-                for i in range(5):
-                    value = random.choice([0, 1])
-                    if value:
-                        value = -crossOff['absSG'][pos]
+            if mutationPoint != -1:
+                # 选取合适的变速变异值
+                choice = [1.389, -1.389]
+                # 若先前的车速建议不为0
+                if crossOff['SG'][pos]:
+                    for i in range(5):
+                        value = random.choice([0, 1])
+                        if value:
+                            value = -crossOff['absSG'][pos]
+                            targetSpeed = value + self.readySGRef[self.readySG[pos]]
+                            if targetSpeed <= self.curMaxSpeed and targetSpeed >= 2.778:
+                                crossOff['absSG'][pos] = value
+                                crossOff['SG'][pos] = targetSpeed
+                                break
+                # 若先前车速建议为0
+                else:
+                    value = random.choice(choice)
+                    for i in range(5):
                         targetSpeed = value + self.readySGRef[self.readySG[pos]]
                         if targetSpeed <= self.curMaxSpeed and targetSpeed >= 2.778:
                             crossOff['absSG'][pos] = value
                             crossOff['SG'][pos] = targetSpeed
                             break
-            # 若先前车速建议为0
-            else:
-                value = random.choice(choice)
-                for i in range(5):
-                    targetSpeed = value + self.readySGRef[self.readySG[pos]]
-                    if targetSpeed <= self.curMaxSpeed and targetSpeed >= 2.778:
-                        crossOff['absSG'][pos] = value
-                        crossOff['SG'][pos] = targetSpeed
-                        break
 
         crossOff['fit'] = -1
 

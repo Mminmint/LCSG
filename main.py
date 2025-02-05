@@ -123,8 +123,7 @@ def run():
                 LCInfo = {"readyLC":readyLC,"readyLCRef":readyLCRef,"LCBound":LCBound}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, LCInfo=LCInfo)
-                print("suggestLC:", suggestLC)
-                print("suggestSG:", suggestSG)
+                print("onlySuggestLC:", suggestLC)
 
             # 没有可建议换道车辆，有可建议变速车辆
             elif not readyLCCount and readySGCount:
@@ -146,7 +145,8 @@ def run():
                 SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":speedLimits}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, LCInfo=LCInfo, SGInfo=SGInfo)
-                print("onlySuggestLC:", suggestLC)
+                print("suggestLC:", suggestLC)
+                print("suggestSG:", suggestSG)
 
             # 没有可优化对象
             else:
