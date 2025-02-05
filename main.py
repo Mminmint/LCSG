@@ -46,16 +46,16 @@ def setVSL(avgDensity,edge):
     jamDensity = 1000/(5+2.5)
     ratio = avgDensity/jamDensity
 
-    if ratio >= 0.5:
+    if ratio >= 0.6:
         speedLimit = 40
-    elif ratio >= 0.4:
-        speedLimit = 45
-    elif ratio >= 0.3:
+    elif ratio >= 0.5:
         speedLimit = 50
-    elif ratio >= 0.2:
-        speedLimit = 55
-    else:
+    elif ratio >= 0.4:
         speedLimit = 60
+    elif ratio >= 0.3:
+        speedLimit = 70
+    else:
+        speedLimit = 80
 
     # 设置可变限速
     traci.edge.setMaxSpeed(edge, speedLimit/3.6)
@@ -123,6 +123,8 @@ def run():
                 LCInfo = {"readyLC":readyLC,"readyLCRef":readyLCRef,"LCBound":LCBound}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, LCInfo=LCInfo)
+                print("suggestLC:", suggestLC)
+                print("suggestSG:", suggestSG)
 
             # 没有可建议换道车辆，有可建议变速车辆
             elif not readyLCCount and readySGCount:
@@ -132,6 +134,7 @@ def run():
                 SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":speedLimits}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, SGInfo=SGInfo)
+                print("onlySuggestSG:", suggestSG)
 
             # 有可建议换道车辆，有可建议变速车辆
             elif readyLCCount and readySGCount:
@@ -143,6 +146,7 @@ def run():
                 SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":speedLimits}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, LCInfo=LCInfo, SGInfo=SGInfo)
+                print("onlySuggestLC:", suggestLC)
 
             # 没有可优化对象
             else:

@@ -32,6 +32,9 @@ def addSimVehs(allVehs,speedLimits):
     for vehInfo in allVehs:
         routeID = routeRef[vehInfo[2][-3]]
         departSpeed = min(vehInfo[4],speedLimits[speedRef[vehInfo[2][-3]]])
+        if vehInfo[2][-3] == '3' and vehInfo[2][-1] == '0' and vehInfo[-1] >= 470:
+            departSpeed = min(5.556,departSpeed)
+            print("slow:",vehInfo[0])
         traci.vehicle.add(vehID=vehInfo[0], routeID=routeID, typeID=typeRef[vehInfo[1]], depart='now',departLane=int(vehInfo[2][-1]), departPos=vehInfo[-1],departSpeed=departSpeed)
         if vehInfo[5] is not None:
             traci.vehicle.setLaneChangeMode(vehInfo[0], vehInfo[5])
@@ -203,7 +206,7 @@ def simExecute(allVehs,suggestLC,suggestSG,simID,queue,speedLimits):
     except Exception as e:
         print(allVehs)
         print(suggestSG)
-        print(f"Error: {e}")
+        print(f"Attention Error: {e}")
 
     finally:
         traci.close()

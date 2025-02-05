@@ -7,7 +7,7 @@ import copy
 import random
 import traci
 from vehicle import Vehicle
-from collections import defaultdict,deque
+from collections import defaultdict
 from typing import Tuple
 
 
@@ -101,7 +101,7 @@ class Vehicles:
                     readyLCRef[vehId] = veh.lane
                     LCCount += 1
 
-            if veh.SGFrequency(self.step):
+            if veh.SGFrequency(self.step) and veh.SGBound():
                 readySG.append(vehId)
                 readySGRef[vehId] = veh.speed
         SGCount = len(readySG)

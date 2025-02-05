@@ -57,8 +57,8 @@ class Optimizer:
 
             if SGTag:
                 # 生成变速随机种子
-                newSG,absSG = [],[]
-                refSG = [2.778,1.389,1.389,-1.389,-1.389,-1.389,-1.389,-2.778,-2.778,-2.778]
+                absSG,newSG = [],[]
+                refSG = [1.389,-1.389]
 
                 # 考虑车辆可能同时换道的可能性
                 if LCTag:
@@ -75,7 +75,7 @@ class Optimizer:
                             for i in range(5):
                                 choice = np.random.choice(refSG)
                                 targetSpeed = choice + self.readySGRef[vehId]
-                                if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                                if targetSpeed <= self.curMaxSpeed and targetSpeed >= 2.778:
                                     absSG.append(choice)
                                     newSG.append(targetSpeed)
                                     break
@@ -92,7 +92,7 @@ class Optimizer:
                             for i in range(5):
                                 choice = np.random.choice(refSG)
                                 targetSpeed = choice + self.readySGRef[vehId]
-                                if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                                if targetSpeed <= self.curMaxSpeed and targetSpeed >= 2.778:
                                     absSG.append(choice)
                                     newSG.append(targetSpeed)
                                     break
@@ -154,7 +154,7 @@ class Optimizer:
                 vehID = self.readySG[i]
                 targetSpeed = popSG[i]
                 if "cv" in vehID:
-                    targetSpeed = max((nearestFive(targetSpeed*3.6))/3.6,0)
+                    targetSpeed = (nearestFive(targetSpeed*3.6))/3.6
                 suggestSG[vehID] = targetSpeed
 
         return suggestSG
@@ -288,16 +288,15 @@ class Optimizer:
                 break
 
             # 选取合适的变速变异值
-            choice = [2.778, 1.389, 1.389, -1.389, -1.389, -1.389, -1.389, -2.778, -2.778, -2.778]
+            choice = [1.389, -1.389]
             # 若先前的车速建议不为0
             if crossOff['SG'][pos]:
                 for i in range(5):
                     value = random.choice([0, 1])
                     if value:
-                        value = random.choice(choice)
-                    if value != crossOff['absSG'][pos]:
+                        value = -crossOff['absSG'][pos]
                         targetSpeed = value + self.readySGRef[self.readySG[pos]]
-                        if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                        if targetSpeed <= self.curMaxSpeed and targetSpeed >= 2.778:
                             crossOff['absSG'][pos] = value
                             crossOff['SG'][pos] = targetSpeed
                             break
@@ -306,7 +305,7 @@ class Optimizer:
                 value = random.choice(choice)
                 for i in range(5):
                     targetSpeed = value + self.readySGRef[self.readySG[pos]]
-                    if targetSpeed <= self.curMaxSpeed and targetSpeed >= 0:
+                    if targetSpeed <= self.curMaxSpeed and targetSpeed >= 2.778:
                         crossOff['absSG'][pos] = value
                         crossOff['SG'][pos] = targetSpeed
                         break
