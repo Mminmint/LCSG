@@ -8,6 +8,6 @@
 
 	<flow id="hv" color="1,0,0" departLane="random" departSpeed="desired" begin="0" end="3600" vehsPerHour="1200" type="HV" from="Input" to="Output"/>
     <flow id="cv" color="0,1,0" departLane="random" departSpeed="desired" begin="0" end="3600" vehsPerHour="400" type="CV" from="Input" to="Output"/>
-    <flow id="cav" color="0,0,1" departLane="random" departSpeed="desired" begin="0" end="3600" vehsPerHour="400" type="CAV" from="Input" to="Output"/>
+    <flow id="cav" color="0,0,1" departLane="random" departSpeed="desired" begin="0" end="3600" vehsPerHour="40" type="CAV" from="Input" to="Output"/>
 
 </routes>

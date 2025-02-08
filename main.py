@@ -11,6 +11,7 @@ import time
 
 import traci
 import os, sys
+import math
 import optparse
 import copy
 
@@ -42,25 +43,36 @@ def lineBound(readyLCDict):
     return LCBound, readyLC
 
 
-def setVSL(avgDensity,edge):
-    jamDensity = 1000/(5+2.5)
-    ratio = avgDensity/jamDensity
+def setVSL(avgDensity, edge, prevSpeed, prevSpeedLimit):
+    jamDensity = 100  # 最大密度 (veh/km)
+    rhoCrit = jamDensity * 0.25  # 临界密度取最大密度的40%（可调整）
+    vFree = 80.0  # 自由流速度 (km/h)
+    tau = 0.03  # 驾驶员反应时间 (h)
+    kappa = 50  # METANET敏感度参数
+    T = 5.0 / 60  # 控制周期 (h)（5分钟）
 
-    if ratio >= 0.6:
-        speedLimit = 40
-    elif ratio >= 0.5:
-        speedLimit = 50
-    elif ratio >= 0.4:
-        speedLimit = 60
-    elif ratio >= 0.3:
-        speedLimit = 70
-    else:
-        speedLimit = 80
+    # 约束密度值在合理范围内
+    avgDensity = min(avgDensity, jamDensity)  # 密度不超过最大密度
 
-    # 设置可变限速
-    traci.edge.setMaxSpeed(edge, speedLimit/3.6)
+    # METANET速度更新方程（简化版）
+    desiredSpeed = vFree * math.exp(-1 / kappa * (avgDensity / rhoCrit) ** 2)
+    new_speed = prevSpeed + (T / tau) * (desiredSpeed - prevSpeed)
 
-    return speedLimit/3.6
+    # 约束速度值在合理范围内
+    newSpeed = max(0, min(new_speed, vFree))  # 速度范围0~v_free km/h
+
+    # 限速规则约束（避免剧烈波动）
+    speedLimit = max(40, newSpeed)  # 限速范围40~80 km/h
+    speedLimit = round(speedLimit/5) * 5
+
+    # 约束限速变化幅度（不超过10 km/h）
+    prevSpeedLimitKmh = prevSpeedLimit * 3.6  # 转换为km/h
+    speedLimit = max(prevSpeedLimitKmh - 10, min(speedLimit, prevSpeedLimitKmh + 10))
+
+    # 设置限速（转换为m/s）
+    traci.edge.setMaxSpeed(edge, speedLimit / 3.6)
+
+    return speedLimit / 3.6, newSpeed
 
 
 def run():
@@ -70,7 +82,9 @@ def run():
     step = 0
     edgeList = ['Input', 'Input.1', 'Input.2', 'Input.3']
     count = [0, 0, 0, 0]
-    speedLimits = [16.67,16.67,16.67,16.67]
+    prevSpeeds = [80.0] * 4  # 初始化各路段速度（km/h）
+    prevDensities = [0.0] * 4  # 初始化各路段密度（veh/km）
+    prevSpeedLimits = [80.0 / 3.6] * 4  # 初始化各路段限速值（m/s）
 
     # 遗传算法参数
     originPopNum = 20
@@ -88,17 +102,26 @@ def run():
         traci.simulationStep()
 
         # 进行可变信息板限速控制
-        if (step >= 540 and step < 600) or (step >= 840 and step < 900) or (step >= 1140 and step < 1200):
+        if (step >= 240 and step < 300) or (step >= 540 and step < 600) \
+                or (step >= 840 and step < 900) or (step >= 1140 and step < 1200):
             for i in range(len(edgeList)):
-                edge = edgeList[i]
-                lastVehNum = traci.edge.getLastStepVehicleNumber(edge)
-                count[i] += lastVehNum
-        elif step == 600 or step == 900 or step == 1200:
-            for i in range(len(count)):
-                avgDensity = count[i]*2.0/60      # 平均密度veh/km
-                speedLimit = setVSL(avgDensity,edgeList[i])
-                speedLimits[i] = speedLimit
-            count = [0,0,0,0]
+                count[i] += traci.edge.getLastStepVehicleNumber(edgeList[i])
+
+        if step == 300 or step == 600 or step == 900 or step == 1200:
+            for i in range(len(edgeList)):
+                # 计算平均密度
+                avgDensity = count[i] / 180
+                avgDensity *= 2
+
+                # 调用METANET模型更新限速
+                speedLimit, newSpeed = setVSL(avgDensity, edgeList[i], prevSpeeds[i], prevSpeedLimits[i])
+
+                # 保存状态供下一周期使用
+                prevSpeeds[i] = newSpeed
+                prevDensities[i] = avgDensity
+                prevSpeedLimits[i] = speedLimit
+
+            count = [0, 0, 0, 0]  # 重置计数器
 
         # 模型优化
         if step >= 600:
@@ -130,7 +153,7 @@ def run():
                 # 整理车辆信息，便于多线程调用
                 orgVehsInfo = vehicles_.organizeInfo()
 
-                SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":speedLimits}
+                SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":prevSpeedLimits}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, SGInfo=SGInfo)
                 print("onlySuggestSG:", suggestSG)
@@ -142,7 +165,7 @@ def run():
                 orgVehsInfo = vehicles_.organizeInfo()
 
                 LCInfo = {"readyLC":readyLC,"readyLCRef":readyLCRef,"LCBound":LCBound}
-                SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":speedLimits}
+                SGInfo = {"readySG":readySG,"readySGRef":readySGRef,"speedLimits":prevSpeedLimits}
                 # 算法优化结果
                 suggestLC,suggestSG = optimizer_.optimize(orgVehsInfo=orgVehsInfo, LCInfo=LCInfo, SGInfo=SGInfo)
                 print("suggestLC:", suggestLC)

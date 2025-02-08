@@ -58,7 +58,7 @@ class Optimizer:
             if SGTag:
                 # 生成变速随机种子
                 absSG,newSG = [],[]
-                refSG = [1.389,-1.389]
+                refSG = [1.389, -1.389,1.389, -1.389,2.778, -2.778]
 
                 # 考虑车辆可能同时换道的可能性
                 if LCTag:
@@ -291,7 +291,7 @@ class Optimizer:
 
             if mutationPoint != -1:
                 # 选取合适的变速变异值
-                choice = [1.389, -1.389]
+                choice = [1.389, -1.389,1.389, -1.389,2.778, -2.778]
                 # 若先前的车速建议不为0
                 if crossOff['SG'][pos]:
                     for i in range(5):
