@@ -115,17 +115,21 @@ class Vehicles:
     '''
     # todo:不确定性参数分布待确定
     def initLCs(self,suggestLC,avgReactTime,reactTimeBias):
-        # 反应时间均匀分布
-        downLimit = avgReactTime * reactTimeBias
-        upLimit = avgReactTime * (2 - reactTimeBias)
-        reactTime = round(random.uniform(downLimit, upLimit))
-
         # print("suggestLC:",suggestLC)
 
         for vehID,lane in suggestLC.items():
             veh = self.vehs[vehID]
-            veh.setLGInfo(self.step)
-            self.prepareLC[reactTime][vehID] = lane
+            veh.setLCInfo(self.step)
+
+            # 若引导车辆为CV
+            if veh.type == 1:
+                # 反应时间均匀分布
+                downLimit = avgReactTime * reactTimeBias
+                upLimit = avgReactTime * (2 - reactTimeBias)
+                reactTime = round(random.uniform(downLimit, upLimit))
+                self.prepareLC[reactTime][vehID] = lane
+            else:
+                self.prepareLC[0][vehID] = lane
 
 
     '''

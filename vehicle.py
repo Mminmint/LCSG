@@ -194,7 +194,7 @@ class Vehicle:
     设置换道引导参数
     当车辆在优化后接到换道引导后，需要改变参数记录
     '''
-    def setLGInfo(self, step: int):
+    def setLCInfo(self, step: int):
         self.lastSLCTime = step
 
 
