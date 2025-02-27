@@ -364,6 +364,7 @@ class Optimizer:
         # 参数初始化
         print('-------------start-------------')
         self.orgVehsInfo = orgVehsInfo
+        self.readyLC,self.readySG = [],[]
 
         LCTag = 1 if LCInfo is not None else 0
         SGTag = 1 if SGInfo is not None else 0

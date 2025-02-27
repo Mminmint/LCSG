@@ -186,7 +186,13 @@ class Vehicles:
                 else:
                     curSpeed = self.vehs[vehID].speed
                     randomRatio = random.uniform(executeBias, 2-executeBias)
-                    realTargetSpeed = round(curSpeed + (targetSpeed - curSpeed)*randomRatio,3)
+
+                    # 目标速度 v_d=v_avg
+                    # realTargetSpeed = round(curSpeed + (targetSpeed - curSpeed)*randomRatio,3)
+
+                    # 目标速度 v_d≠v_avg
+                    realTargetSpeed = round(curSpeed + (targetSpeed - curSpeed - 0.556) * randomRatio, 3)
+
                     realTargetSpeed = max(0,realTargetSpeed)
                     traci.vehicle.slowDown(vehID,realTargetSpeed,5)
                     # print(vehID,targetSpeed,realTargetSpeed)
